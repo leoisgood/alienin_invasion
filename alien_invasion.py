@@ -33,6 +33,7 @@ class AlienInvasion:
             self._check_events()
             self.ship.update()  # 飞船类更新位置
             self._update_bullets()
+            self._update_aliens()
             self._update_screen()
 
     def _check_events(self):
@@ -79,6 +80,28 @@ class AlienInvasion:
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
             print(len(self.bullets))
+        self.check_bullet_alien_collisions()
+
+    def check_bullet_alien_collisions(self):
+        # 检查是否有子弹击中外星人，
+        # 如果是，就删除响应的子弹和外星人
+        collisions = pygame.sprite.groupcollide(
+            self.bullets, self.aliens, True, True)
+        # return collisions
+        if not self.aliens:
+            # 删除现有的子弹并创建一群新的外星人
+            self.bullets.empty()
+            self._create_fleet()
+
+    def _update_aliens(self):
+        """
+        检查是否有外星人位于屏幕边缘,
+        并更新正群外星人的位置。
+        """
+        self._check_fleet_edge()
+        self.aliens.update()
+        if pygame.sprite.spritecollideany(self.ship, self.aliens):
+            print("Ship hit!!!")
 
     def _create_fleet(self):
         # 创建外星人群
@@ -106,6 +129,19 @@ class AlienInvasion:
         alien.rect.x = alien.x
         alien.rect.y = alien.rect.height + 2 * alien.rect.height * row_number
         self.aliens.add(alien)
+
+    def _check_fleet_edge(self):
+        """有外星人到达边缘时采取相应的措施"""
+        for alien in self.aliens.sprites():
+            if alien.check_edge():
+                self._change_fleet_direction()
+                break
+
+    def _change_fleet_direction(self):
+        """将整群外星人下移，改变方向"""
+        for alien in self.aliens.sprites():
+            alien.rect.y += self.settings.fleet_drop_speed
+        self.settings.fleet_direction *= -1  # 改变方向
 
     def _update_screen(self):
         """Update images on the screen, and flip to the new screen."""
